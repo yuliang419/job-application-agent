@@ -30,9 +30,13 @@ def parse_cv(state: AgentState) -> dict:
 
 
 def scrape_jobs(state: AgentState) -> dict:
-    """Collect jobs for the requested query and location from every registered board."""
+    """Collect jobs for the requested query and location from the configured board."""
     writer = get_stream_writer()
-    scrapers = get_scrapers()
+    scrapers = get_scrapers(
+        [state["job_board"]],
+        experience_levels=state.get("experience_levels") or None,
+        pages_per_location=state.get("pages_per_location", 1),
+    )
     jobs = []
     for done, scraper in enumerate(scrapers, start=1):
         jobs.extend(scraper.search(state["query"], state["location"]))

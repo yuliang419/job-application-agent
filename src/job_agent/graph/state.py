@@ -13,6 +13,9 @@ class AgentState(TypedDict, total=False):
     query: str
     location: str
     cv_path: str
+    job_board: str
+    experience_levels: list[str]
+    pages_per_location: int
     candidate: CandidateProfile
     jobs: list[Job]
     report: MatchReport

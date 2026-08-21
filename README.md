@@ -37,6 +37,12 @@ Place your CV as a PDF somewhere accessible (e.g. `data/cv.pdf`), and edit
      --cv data/cv.pdf --thread-id ml-munich-2026-08-21
    ```
 
+   Optional flags:
+   - `--job-board` — which board to scrape (default `linkedin`).
+   - `--experience-level` — repeatable, board-specific filter (e.g. `entry`,
+     `mid-senior` for LinkedIn).
+   - `--pages-per-location` — result pages to fetch per location (default `1`).
+
 2. Review the report saved in `data/reports`, then approve the jobs you want to apply to:
 
    ```bash

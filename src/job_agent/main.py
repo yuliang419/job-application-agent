@@ -18,6 +18,7 @@ from job_agent.graph import build_graph
 from job_agent.job_posting import fetch_job_posting_text
 from job_agent.llm import LLMClient
 from job_agent.models import Application, MatchReport, MatchReview
+from job_agent.scrapers import SCRAPER_REGISTRY
 
 app = typer.Typer(help="Scan job boards, score matches, and draft cover letters for approved jobs.")
 console = Console()
@@ -25,15 +26,38 @@ console = Console()
 
 @app.command()
 def scan(
-    query: str,
+    keywords: str,
     location: str,
     thread_id: str = typer.Option(..., help="Unique id used to resume this run via 'review'."),
     cv: Path = typer.Option(..., exists=True, help="Path to the candidate's CV PDF."),
+    job_board: str = typer.Option(
+        "linkedin", help=f"Job board to scrape. One of: {', '.join(SCRAPER_REGISTRY)}."
+    ),
+    experience_level: list[str] = typer.Option(
+        [],
+        help=(
+            "Optional experience-level filter(s), repeatable (board-specific, e.g. "
+            "internship, entry, associate, mid-senior, director, executive for LinkedIn)."
+        ),
+    ),
+    pages_per_location: int = typer.Option(1, min=1, help="Result pages to fetch per location."),
 ) -> None:
     """Scrape jobs, score them against the CV, and print the top-10 match report."""
+    if job_board not in SCRAPER_REGISTRY:
+        raise typer.BadParameter(
+            f"Unknown job board '{job_board}'. Choose one of: {', '.join(SCRAPER_REGISTRY)}."
+        )
+
     with build_graph() as graph:
         config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
-        inputs = {"query": query, "location": location, "cv_path": str(cv)}
+        inputs = {
+            "query": keywords,
+            "location": location,
+            "cv_path": str(cv),
+            "job_board": job_board,
+            "experience_levels": experience_level,
+            "pages_per_location": pages_per_location,
+        }
 
         with Progress(console=console) as progress:
             tasks: dict[str, TaskID] = {}
