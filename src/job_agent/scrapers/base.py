@@ -2,14 +2,11 @@
 
 from abc import ABC, abstractmethod
 from typing import Iterable
-from urllib.error import HTTPError
-from urllib.request import Request, urlopen
 
+from job_agent.http import JobBoardAccessError, fetch
 from job_agent.models import Job
 
-
-class JobBoardAccessError(RuntimeError):
-    """A board denied access to an automated public-page request."""
+__all__ = ["JobBoardAccessError", "JobBoardScraper"]
 
 
 class JobBoardScraper(ABC):
@@ -22,23 +19,7 @@ class JobBoardScraper(ABC):
     @staticmethod
     def _fetch(url: str, timeout: float) -> str:
         """Fetch one public board page as UTF-8 text."""
-        request = Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (compatible; JobSearchClient/1.0)"
-            },
-        )
-        try:
-            with urlopen(request, timeout=timeout) as response:
-                return response.read().decode("utf-8", errors="replace")
-        except HTTPError as error:
-            if error.code == 403:
-                raise JobBoardAccessError(
-                    "Board denied this automated request (HTTP 403). Use a "
-                    "board-approved API, export, or manually supplied job "
-                    "URLs instead of retrying."
-                ) from error
-            raise
+        return fetch(url, timeout)
 
     @staticmethod
     def _deduplicate(jobs: Iterable[Job]) -> list[Job]:

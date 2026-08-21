@@ -35,6 +35,21 @@ class LLMClient:
         )
         return CandidateProfile.model_validate(payload)
 
+    def extract_job_posting(self, url: str, page_text: str) -> Job:
+        """Extract structured job fields from a job-posting page's raw text."""
+        payload = self._chat_json(
+            system=(
+                "Extract job posting details from the raw text of a job listing page. "
+                "Respond with a JSON object with keys: title (str), company (str), "
+                "location (str), description (str, the role responsibilities and "
+                "requirements in plain text)."
+            ),
+            user=page_text,
+        )
+        payload["url"] = url
+        payload["source"] = "manual"
+        return Job.model_validate(payload)
+
     def score_job(self, candidate: CandidateProfile, job: Job) -> MatchResult:
         """Score one job against a candidate profile."""
         prompt = (
@@ -69,8 +84,8 @@ class LLMClient:
                         "Rewrite the body of the given LaTeX cover letter to target the "
                         "supplied job and candidate background. Preserve the LaTeX "
                         "structure and return only the full LaTeX document, no commentary."
-                        "Try to change the text as little as possible while still tailoring "
-                        "it to the job and candidate."
+                        "Try to preserve the original letter's structure, but slightly adapt "
+                        "the experience to highlight skills matching the job requirements."
                     ),
                 },
                 {"role": "user", "content": prompt},

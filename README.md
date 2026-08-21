@@ -48,4 +48,16 @@ Place your CV as a PDF somewhere accessible (e.g. `data/cv.pdf`), and edit
 
 3. Tailored cover letters are written to `data/applications/<company-title>/cover_letter.tex`.
 
+### Just need one cover letter?
+
+Skip the scan/review workflow entirely if you already know the job you want to apply to:
+
+```bash
+job-agent letter --cv data/cv.pdf --url "https://www.linkedin.com/jobs/view/123"
+```
+
+This fetches the job posting page, has the LLM extract the title/company/location/
+description from it, and writes a tailored letter straight to
+`data/applications/<company-title>/cover_letter.tex`.
+
 Run `job-agent --help` or `job-agent <command> --help` for all options.

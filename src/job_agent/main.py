@@ -12,7 +12,11 @@ from rich.progress import Progress, TaskID
 from rich.table import Table
 
 from job_agent.config import get_settings
+from job_agent.cover_letter_editor import generate_cover_letter, save_cover_letter
+from job_agent.document_parser import PdfDocumentParser
 from job_agent.graph import build_graph
+from job_agent.job_posting import fetch_job_posting_text
+from job_agent.llm import LLMClient
 from job_agent.models import Application, MatchReport, MatchReview
 
 app = typer.Typer(help="Scan job boards, score matches, and draft cover letters for approved jobs.")
@@ -66,6 +70,22 @@ def review(
             console.print(
                 f"Saved cover letter for {application.job.company} - {application.job.title}"
             )
+
+
+@app.command()
+def letter(
+    cv: Path = typer.Option(..., exists=True, help="Path to the candidate's CV PDF."),
+    url: str = typer.Option(..., help="Job posting URL."),
+) -> None:
+    """Generate a tailored cover letter from just a CV and a job posting URL."""
+    llm = LLMClient()
+    job = llm.extract_job_posting(url, fetch_job_posting_text(url))
+
+    cv_text = PdfDocumentParser(cv).parse()
+    candidate = llm.extract_candidate_profile(cv_text)
+    letter_tex = generate_cover_letter(job, candidate, llm)
+    letter_path = save_cover_letter(job, letter_tex)
+    console.print(f"Saved cover letter to {letter_path}")
 
 
 def _save_report(report: MatchReport, thread_id: str) -> Path:
