@@ -84,14 +84,15 @@ class LLMClient:
                         "Rewrite the body of the given LaTeX cover letter to target the "
                         "supplied job and candidate background. Preserve the LaTeX "
                         "structure and return only the full LaTeX document, no commentary."
-                        "Try to preserve the original letter's structure, but slightly adapt "
-                        "the experience to highlight skills matching the job requirements."
+                        "Try not to alter the experiences too much, but slightly adapt "
+                        "them to highlight skills matching the job requirements."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
         )
-        return response.choices[0].message.content or base_letter
+        content = response.choices[0].message.content
+        return _REASONING_BLOCK.sub("", content).strip() if content else base_letter
 
     def _chat_json(self, system: str, user: str) -> dict:
         """Call the chat endpoint and parse a single JSON object response."""
