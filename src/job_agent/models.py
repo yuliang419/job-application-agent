@@ -2,9 +2,24 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import AfterValidator, BaseModel, Field, HttpUrl, TypeAdapter
+
+_http_url_adapter = TypeAdapter(HttpUrl)
+
+
+def _validate_http_url(value: str) -> str:
+    """Confirm one URL is well-formed http(s), keeping the field a plain str.
+
+    A plain str (rather than pydantic.HttpUrl) is required because LangGraph's
+    msgpack checkpoint serializer cannot serialize pydantic's Url wrapper type.
+    """
+    _http_url_adapter.validate_python(value)
+    return value
+
+
+HttpUrlStr = Annotated[str, AfterValidator(_validate_http_url)]
 
 
 class ApplicationStatus(str, Enum):
@@ -23,7 +38,7 @@ class Job(BaseModel):
     company: str = Field(min_length=1)
     location: str = Field(min_length=1)
     description: str = Field(min_length=1)
-    url: HttpUrl
+    url: HttpUrlStr
     source: str = Field(min_length=1)
     discovered_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -66,7 +81,7 @@ class MatchReview(BaseModel):
     """Human selection of report jobs eligible for letter generation."""
 
     reviewer: str = Field(min_length=1)
-    selected_job_urls: list[HttpUrl] = Field(default_factory=list)
+    selected_job_urls: list[HttpUrlStr] = Field(default_factory=list)
     comments: str = ""
     decided_at: datetime = Field(default_factory=datetime.utcnow)
 

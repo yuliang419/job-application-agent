@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+data/checkpoints.sqlite
+data/applications/

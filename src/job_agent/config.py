@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def _as_bool(value: str) -> bool:
 	return value.strip().lower() in {"1", "true", "yes", "on"}
