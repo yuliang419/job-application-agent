@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.progress import Progress, TaskID
 from rich.table import Table
 
+from job_agent.config import get_settings
 from job_agent.graph import build_graph
 from job_agent.models import Application, MatchReport, MatchReview
 
@@ -39,8 +40,9 @@ def scan(
                 progress.update(tasks[stage], completed=done)
 
         report = MatchReport.model_validate(graph.get_state(config).values["report"])
-        _print_report(report)
-        console.print(f"\nRun `job-agent review {thread_id} --approve <url>` to continue.")
+        report_path = _save_report(report, thread_id)
+        console.print(f"Saved match report to {report_path}")
+        console.print(f"Run `job-agent review {thread_id} --approve <url>` to continue.")
 
 
 
@@ -66,14 +68,14 @@ def review(
             )
 
 
-def _print_report(report: MatchReport) -> None:
-    """Render a ranked match report as a table."""
+def _save_report(report: MatchReport, thread_id: str) -> Path:
+    """Render the ranked match report to a text file wide enough to keep full URLs."""
     table = Table(title="Top job matches")
     table.add_column("Rank")
     table.add_column("Score")
     table.add_column("Title")
     table.add_column("Company")
-    table.add_column("URL")
+    table.add_column("URL", overflow="fold", no_wrap=True)
     for ranked in report.jobs:
         table.add_row(
             str(ranked.rank),
@@ -82,7 +84,17 @@ def _print_report(report: MatchReport) -> None:
             ranked.job.company,
             str(ranked.job.url),
         )
-    console.print(table)
+
+    longest_url = max((len(str(ranked.job.url)) for ranked in report.jobs), default=0)
+    width = 60 + longest_url
+
+    reports_dir = get_settings().data_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    report_path = reports_dir / f"{thread_id}.txt"
+
+    file_console = Console(file=report_path.open("w"), width=width)
+    file_console.print(table)
+    return report_path
 
 
 if __name__ == "__main__":

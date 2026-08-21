@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import json
+import re
 
 from openai import OpenAI
 
 from job_agent.config import get_settings
 from job_agent.models import CandidateProfile, Job, MatchResult
+
+_REASONING_BLOCK = re.compile(
+    r"<(think|thinking|thought|reasoning)>.*?</\1>", re.IGNORECASE | re.DOTALL
+)
 
 
 class LLMClient:
@@ -84,4 +89,13 @@ class LLMClient:
             ],
         )
         content = response.choices[0].message.content or "{}"
-        return json.loads(content)
+        return json.loads(_extract_json_object(content))
+
+
+def _extract_json_object(content: str) -> str:
+    """Isolate a JSON object, discarding any reasoning tags some models leak into content."""
+    content = _REASONING_BLOCK.sub("", content).strip()
+    start, end = content.find("{"), content.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError(f"No JSON object found in model response: {content!r}")
+    return content[start : end + 1]

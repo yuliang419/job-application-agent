@@ -5,5 +5,8 @@ __pycache__/
 .venv/
 venv/
 .mypy_cache/
-data/checkpoints.sqlite
+data/checkpoints.sqlite*
 data/applications/
+data/reports/
+.DS_Store
+data/.DS_Store
