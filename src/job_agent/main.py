@@ -40,6 +40,10 @@ def scan(
             "internship, entry, associate, mid-senior, director, executive for LinkedIn)."
         ),
     ),
+    date_posted: str = typer.Option(
+        None,
+        help="Optional posting-age filter (board-specific, e.g. day, week, month for LinkedIn).",
+    ),
     pages_per_location: int = typer.Option(1, min=1, help="Result pages to fetch per location."),
 ) -> None:
     """Scrape jobs, score them against the CV, and print the top-10 match report."""
@@ -56,6 +60,7 @@ def scan(
             "cv_path": str(cv),
             "job_board": job_board,
             "experience_levels": experience_level,
+            "date_posted": date_posted,
             "pages_per_location": pages_per_location,
         }
 

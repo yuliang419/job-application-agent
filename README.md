@@ -41,6 +41,8 @@ Place your CV as a PDF somewhere accessible (e.g. `data/cv.pdf`), and edit
    - `--job-board` — which board to scrape (default `linkedin`).
    - `--experience-level` — repeatable, board-specific filter (e.g. `entry`,
      `mid-senior` for LinkedIn).
+   - `--date-posted` — board-specific posting-age filter (`day`, `week`, `month`
+     for LinkedIn).
    - `--pages-per-location` — result pages to fetch per location (default `1`).
 
 2. Review the report saved in `data/reports`, then approve the jobs you want to apply to:

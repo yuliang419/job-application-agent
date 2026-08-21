@@ -30,6 +30,13 @@ EXPERIENCE_LEVELS: dict[str, str] = {
     "executive": "6",
 }
 
+# LinkedIn's public job-search "date posted" filter windows, in seconds.
+DATE_POSTED_RANGES: dict[str, int] = {
+    "day": 86400,
+    "week": 604800,
+    "month": 2592000,
+}
+
 class LinkedInScraper(JobBoardScraper):
     """Collect public LinkedIn guest-search jobs."""
 
@@ -37,12 +44,14 @@ class LinkedInScraper(JobBoardScraper):
         self,
         experience_levels: Sequence[str] | None = None,
         *,
+        date_posted: str | None = None,
         pages_per_location: int = 1,
         page_size: int = 25,
         delay_seconds: float = 1.0,
         timeout: float = 15.0,
     ) -> None:
         self.experience_levels = experience_levels
+        self.date_posted = date_posted
         self.pages_per_location = pages_per_location
         self.page_size = page_size
         self.delay_seconds = delay_seconds
@@ -54,6 +63,7 @@ class LinkedInScraper(JobBoardScraper):
             keywords=query,
             locations=[location],
             experience_levels=self.experience_levels,
+            date_posted=self.date_posted,
             pages_per_location=self.pages_per_location,
             page_size=self.page_size,
             delay_seconds=self.delay_seconds,
@@ -66,12 +76,14 @@ def build_search_url(
     location: str,
     experience_levels: Sequence[str] | None = None,
     *,
+    date_posted: str | None = None,
     start: int = 0,
 ) -> str:
     """Build a public LinkedIn guest-search URL for the supplied criteria.
 
     ``experience_levels`` accepts: internship, entry, associate, mid-senior,
     director, and executive. Multiple values are sent as an OR filter.
+    ``date_posted`` accepts: day, week, month.
     """
     if not keywords.strip():
         raise ValueError("keywords must not be empty")
@@ -91,6 +103,14 @@ def build_search_url(
         if invalid:
             raise ValueError(f"unsupported experience level(s): {', '.join(invalid)}")
         params["f_E"] = ",".join(EXPERIENCE_LEVELS[level] for level in normalized)
+    if date_posted:
+        normalized_range = date_posted.lower().strip()
+        if normalized_range not in DATE_POSTED_RANGES:
+            raise ValueError(
+                f"unsupported date_posted '{date_posted}'; choose one of: "
+                f"{', '.join(DATE_POSTED_RANGES)}"
+            )
+        params["f_TPR"] = f"r{DATE_POSTED_RANGES[normalized_range]}"
 
     return f"{LINKEDIN_GUEST_JOBS_URL}?{urlencode(params)}"
 
@@ -100,6 +120,7 @@ def scrape_jobs(
     locations: Iterable[str],
     experience_levels: Sequence[str] | None = None,
     *,
+    date_posted: str | None = None,
     pages_per_location: int = 1,
     page_size: int = 25,
     delay_seconds: float = 1.0,
@@ -114,7 +135,13 @@ def scrape_jobs(
     jobs: list[Job] = []
     for location in locations:
         for page in range(pages_per_location):
-            url = build_search_url(keywords, location, experience_levels, start=page * page_size)
+            url = build_search_url(
+                keywords,
+                location,
+                experience_levels,
+                date_posted=date_posted,
+                start=page * page_size,
+            )
             jobs.extend(_parse_job_cards(JobBoardScraper._fetch(url, timeout)))
             if delay_seconds > 0 and page < pages_per_location - 1:
                 time.sleep(delay_seconds)

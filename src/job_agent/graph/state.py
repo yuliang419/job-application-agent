@@ -15,6 +15,7 @@ class AgentState(TypedDict, total=False):
     cv_path: str
     job_board: str
     experience_levels: list[str]
+    date_posted: str
     pages_per_location: int
     candidate: CandidateProfile
     jobs: list[Job]

@@ -35,6 +35,7 @@ def scrape_jobs(state: AgentState) -> dict:
     scrapers = get_scrapers(
         [state["job_board"]],
         experience_levels=state.get("experience_levels") or None,
+        date_posted=state.get("date_posted") or None,
         pages_per_location=state.get("pages_per_location", 1),
     )
     jobs = []
