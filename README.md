@@ -1,7 +1,7 @@
 # job-application-agent
 
 An agent that scrapes job boards, scores matches against your CV, and drafts tailored
-cover letters — pausing for your approval before any letter is generated.
+cover letters for jobs you select.
 
 ## Workflow
 
@@ -15,7 +15,7 @@ flowchart LR
 ```
 
 Each run is identified by a `--thread-id`, so `scan` and `review` can be separate
-CLI invocations — the workflow state (including the pending human-review step) is
+CLI invocations. The workflow state (including the pending human-review step) is
 checkpointed to `data/checkpoints.sqlite` in between.
 
 ## Setup
@@ -37,7 +37,7 @@ Place your CV as a PDF somewhere accessible (e.g. `data/cv.pdf`), and edit
      --cv data/cv.pdf --thread-id ml-munich-2026-08-21
    ```
 
-2. Review the printed report, then approve the jobs you want to apply to:
+2. Review the report saved in `data/reports`, then approve the jobs you want to apply to:
 
    ```bash
    job-agent review ml-munich-2026-08-21 \
