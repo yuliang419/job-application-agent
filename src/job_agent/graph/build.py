@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Generator
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
@@ -15,7 +15,7 @@ from job_agent.graph.state import AgentState
 
 
 @contextmanager
-def build_graph() -> Iterator[CompiledStateGraph]:
+def build_graph() -> Generator[CompiledStateGraph]:
     """Yield a compiled graph backed by a sqlite checkpointer for cross-run persistence.
 
     A checkpointer is required because `human_review` interrupts the graph and the
