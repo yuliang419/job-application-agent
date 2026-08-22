@@ -6,7 +6,7 @@ cover letters for jobs you select.
 ## Workflow
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["job-agent scan"] --> B["scrape jobs + score vs CV"]
     B --> C["print top-10 report"]
     C --> D["you review + approve/reject"]
