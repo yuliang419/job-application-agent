@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import json
 import re
+from typing import Any
 
-from openai import OpenAI
+from openai import (
+    APIConnectionError,
+    AuthenticationError,
+    OpenAI,
+    RateLimitError,
+)
 
 from job_agent.config import get_settings
 from job_agent.models import CandidateProfile, Job, MatchResult
@@ -13,6 +19,10 @@ from job_agent.models import CandidateProfile, Job, MatchResult
 _REASONING_BLOCK = re.compile(
     r"<(think|thinking|thought|reasoning)>.*?</\1>", re.IGNORECASE | re.DOTALL
 )
+
+
+class LLMRateLimitError(RuntimeError):
+    """The configured LLM API key or endpoint is being rate limited."""
 
 
 class LLMClient:
@@ -75,8 +85,7 @@ class LLMClient:
             f"Target job:\ntitle: {job.title}\ncompany: {job.company}\n"
             f"description: {job.description}\n"
         )
-        response = self._client.chat.completions.create(
-            model=self._model,
+        response = self._create_chat_completion(
             messages=[
                 {
                     "role": "system",
@@ -96,8 +105,7 @@ class LLMClient:
 
     def _chat_json(self, system: str, user: str) -> dict:
         """Call the chat endpoint and parse a single JSON object response."""
-        response = self._client.chat.completions.create(
-            model=self._model,
+        response = self._create_chat_completion(
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system},
@@ -106,6 +114,27 @@ class LLMClient:
         )
         content = response.choices[0].message.content or "{}"
         return json.loads(_extract_json_object(content))
+
+    def _create_chat_completion(self, **kwargs: Any):
+        """Call the chat endpoint, translating provider errors into clear messages."""
+        try:
+            return self._client.chat.completions.create(model=self._model, **kwargs)
+        except RateLimitError as error:
+            raise LLMRateLimitError(
+                f"LLM API key hit a rate limit or quota cap for model '{self._model}'. "
+                "Wait and retry, use a different key, or reduce request volume "
+                "(fewer --pages-per-location / scored jobs per scan)."
+            ) from error
+        except AuthenticationError as error:
+            raise LLMRateLimitError(
+                f"LLM API rejected credentials for model '{self._model}'. Check "
+                "LLM_API_KEY in .env."
+            ) from error
+        except APIConnectionError as error:
+            raise LLMRateLimitError(
+                f"Could not reach the LLM API at {self._client.base_url}. Check "
+                "LLM_BASE_URL and your network connection."
+            ) from error
 
 
 def _extract_json_object(content: str) -> str:
