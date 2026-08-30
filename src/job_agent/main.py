@@ -84,12 +84,16 @@ def review(
     thread_id: str,
     reviewer: str = typer.Option(..., help="Name recorded on the review decision."),
     approve: list[str] = typer.Option([], help="Job URL(s) to approve for a cover letter."),
+    template: Path = typer.Option("data/cover_letter.tex", exists=True, help="Path to cover letter template (.txt or .tex)."),
 ) -> None:
     """Resume a scan with the human's approved job URLs and generate cover letters."""
     with build_graph() as graph:
         config: RunnableConfig = {"configurable": {"thread_id": thread_id}}
         match_review = MatchReview(reviewer=reviewer, selected_job_urls=approve)
-        result = graph.invoke(Command(resume=match_review.model_dump(mode="json")), config=config)
+        result = graph.invoke(
+            Command(resume=match_review.model_dump(mode="json"), template_path=str(template)),
+            config=config,
+        )
 
         applications = [Application.model_validate(item) for item in result["applications"]]
         if not applications:
@@ -105,6 +109,7 @@ def review(
 def letter(
     cv: Path = typer.Option(..., exists=True, help="Path to the candidate's CV PDF."),
     url: str = typer.Option(..., help="Job posting URL."),
+    template: Path = typer.Option("data/cover_letter.tex", exists=True, help="Path to cover letter template (.txt or .tex)."),
 ) -> None:
     """Generate a tailored cover letter from just a CV and a job posting URL."""
     llm = LLMClient()
@@ -112,8 +117,8 @@ def letter(
 
     cv_text = PdfDocumentParser(cv).parse()
     candidate = llm.extract_candidate_profile(cv_text)
-    letter_tex = generate_cover_letter(job, candidate, llm)
-    letter_path = save_cover_letter(job, letter_tex)
+    letter_content, letter_format = generate_cover_letter(job, candidate, llm, template)
+    letter_path = save_cover_letter(job, letter_content, letter_format)
     console.print(f"Saved cover letter to {letter_path}")
 
 

@@ -78,9 +78,17 @@ class LLMClient:
         return MatchResult.model_validate(payload)
 
     def tailor_cover_letter(self, base_letter: str, job: Job, candidate: CandidateProfile) -> str:
-        """Rewrite a base LaTeX cover letter to target one specific job."""
+        """Rewrite a base cover letter (LaTeX or plain text) to target one specific job."""
+        is_latex = "\\documentclass" in base_letter or "\\begin{letter}" in base_letter
+        format_desc = "LaTeX" if is_latex else "plain text"
+        preserve_instruction = (
+            "Preserve the LaTeX structure and return only the full LaTeX document, no commentary."
+            if is_latex
+            else "Preserve the structure and return only the full cover letter, no commentary."
+        )
+        
         prompt = (
-            f"Base cover letter (LaTeX):\n{base_letter}\n\n"
+            f"Base cover letter ({format_desc}):\n{base_letter}\n\n"
             f"Candidate profile:\n{candidate.model_dump_json()}\n\n"
             f"Target job:\ntitle: {job.title}\ncompany: {job.company}\n"
             f"description: {job.description}\n"
@@ -90,10 +98,10 @@ class LLMClient:
                 {
                     "role": "system",
                     "content": (
-                        "Rewrite the body of the given LaTeX cover letter to target the "
-                        "supplied job and candidate background. Preserve the LaTeX "
-                        "structure and return only the full LaTeX document, no commentary."
-                        "Try not to alter the experiences too much, but slightly adapt "
+                        f"Rewrite the body of the given {format_desc} cover letter to target the "
+                        "supplied job and candidate background. "
+                        + preserve_instruction +
+                        " Try not to alter the experiences too much, but slightly adapt "
                         "them to highlight skills matching the job requirements."
                     ),
                 },

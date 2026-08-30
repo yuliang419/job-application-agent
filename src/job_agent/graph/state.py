@@ -21,6 +21,7 @@ class AgentState(TypedDict):
     experience_levels: list[str]
     date_posted: str
     pages_per_location: int
+    template_path: NotRequired[str]
     candidate: NotRequired[CandidateProfile]
     jobs: NotRequired[list[Job]]
     report: NotRequired[MatchReport]

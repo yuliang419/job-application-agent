@@ -65,22 +65,30 @@ def human_review(state: AgentState) -> dict:
 
 def generate_letters(state: AgentState) -> dict:
     """Tailor and save a cover letter for every job the human approved."""
+    from pathlib import Path
+    
     review = MatchReview.model_validate(state["review"])
     report = MatchReport.model_validate(state["report"])
     approved_urls = {str(url) for url in review.selected_job_urls}
+    template_path = Path(state.get("template_path", ""))
+    
+    if not template_path.exists():
+        raise FileNotFoundError(f"Template file not found: {template_path}")
 
     applications = []
     for ranked in report.jobs:
         if str(ranked.job.url) not in approved_urls:
             continue
-        letter = generate_cover_letter(ranked.job, report.candidate, _get_llm())
-        save_cover_letter(ranked.job, letter)
+        letter_content, letter_format = generate_cover_letter(
+            ranked.job, report.candidate, _get_llm(), template_path
+        )
+        save_cover_letter(ranked.job, letter_content, letter_format)
         applications.append(
             Application(
                 job=ranked.job,
                 candidate=report.candidate,
                 match=ranked.match,
-                cover_letter=letter,
+                cover_letter=letter_content,
             )
         )
     return {"applications": applications}

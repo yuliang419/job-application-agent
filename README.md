@@ -25,8 +25,12 @@ uv sync
 cp .env.example .env   # fill in LLM_API_KEY, LLM_MODEL, etc.
 ```
 
-Place your CV as a PDF somewhere accessible (e.g. `data/cv.pdf`), and edit
-`data/cover_letter.tex` to be your base cover letter template.
+Place your CV as a PDF somewhere accessible (e.g. `data/cv.pdf`), and create
+your base cover letter template as either:
+- `data/cover_letter.tex` (LaTeX format), or
+- `data/cover_letter.txt` (plain text format)
+
+The system auto-detects the format from the file extension.
 
 ## Usage
 
@@ -54,7 +58,12 @@ Place your CV as a PDF somewhere accessible (e.g. `data/cv.pdf`), and edit
      --approve "https://www.linkedin.com/jobs/view/456"
    ```
 
-3. Tailored cover letters are written to `data/applications/<company-title>/cover_letter.tex`.
+   Optional flags:
+   - `--template` — path to cover letter template (default: `data/cover_letter.tex`).
+     Supports `.tex` (LaTeX) or `.txt` (plain text) formats.
+
+3. Tailored cover letters are written to `data/applications/<company-title>/cover_letter.{tex,txt}`
+   (extension depends on template format).
 
 ### Just need one cover letter?
 
@@ -66,6 +75,16 @@ job-agent letter --cv data/cv.pdf --url "https://www.linkedin.com/jobs/view/123"
 
 This fetches the job posting page, has the LLM extract the title/company/location/
 description from it, and writes a tailored letter straight to
-`data/applications/<company-title>/cover_letter.tex`.
+`data/applications/<company-title>/cover_letter.tex` (or `.txt` if using a plain text template).
+
+Optional flags:
+- `--template` — path to cover letter template (default: `data/cover_letter.tex`).
+  Supports `.tex` (LaTeX) or `.txt` (plain text) formats.
+
+To use a plain text template:
+
+```bash
+job-agent letter --cv data/cv.pdf --url "..." --template data/cover_letter.txt
+```
 
 Run `job-agent --help` or `job-agent <command> --help` for all options.
